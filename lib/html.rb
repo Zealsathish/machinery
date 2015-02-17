@@ -35,7 +35,10 @@ class Html
     File.write(File.join(target, "index.html"), template.render(binding))
     File.write(File.join(target, "assets/description.js"),<<-EOT
       function getDescription() {
-        return JSON.parse('#{description.to_hash.to_json.gsub("\\\"", "&quote").gsub("'", "&#39;")}')
+        return JSON.parse('#{description.to_hash.to_json
+          .gsub("\\\"", "&quote")
+          .gsub("'", "&#39;")}'
+        )
       }
       EOT
     )
