@@ -28,8 +28,8 @@ describe ChangedManagedFilesInspector do
     inspector = ChangedManagedFilesInspector.new
 
     allow(system).to receive(:run_script).with("changed_managed_files.sh", anything()).and_return(rpm_result)
-    allow(system).to receive(:run_command).with("stat", "--printf",
-      "%a:%U:%G:%u:%g:%n\\n", "/etc/iscsi/iscsid.conf",
+    allow(system).to receive(:run_command).with("stat", "-c",
+      "%a:%U:%G:%u:%g:%n", "/etc/iscsi/iscsid.conf",
       "/etc/apache2/de:fault server.conf", "/etc/apache2/listen.conf",
       "/usr/share/man/man1/time.1.gz", anything()).and_return(stat_result)
 

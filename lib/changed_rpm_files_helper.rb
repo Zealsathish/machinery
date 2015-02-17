@@ -61,7 +61,7 @@ module ChangedRpmFilesHelper
   def get_file_properties(system, cur_files)
     ret = {}
     out = system.run_command(
-        "stat", "--printf", "%a:%U:%G:%u:%g:%n\\n",
+        "stat", "-c", "%a:%U:%G:%u:%g:%n",
         *cur_files,
         :stdout => :capture
     )

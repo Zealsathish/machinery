@@ -126,7 +126,7 @@ EOF
 
     def expect_data_gather_cmds(system,files,stats_output)
       expect(system).to receive(:run_command).with(
-        "stat", "--printf", "%a:%U:%G:%u:%g:%n\\n", *files,
+        "stat", "-c", "%a:%U:%G:%u:%g:%n", *files,
         :stdout => :capture
       ).and_return(stats_output)
     end
