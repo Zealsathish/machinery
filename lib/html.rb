@@ -33,11 +33,13 @@ class Html
 
     FileUtils.cp_r(File.join(Machinery::ROOT, "html", "assets"), target)
     File.write(File.join(target, "index.html"), template.render(binding))
+
+    # Generate JSON and escape the 's, since it will be embedded in javascript
+    # using 's
+    json = description.to_hash.to_json.gsub("'", "\\\\'")
     File.write(File.join(target, "assets/description.js"),<<-EOT
       function getDescription() {
-        return JSON.parse('#{description.to_hash.to_json
-          .gsub("\\\"", "&quote")
-          .gsub("'", "&#39;")}'
+        return JSON.parse('#{json}'
         )
       }
       EOT
