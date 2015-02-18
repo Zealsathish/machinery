@@ -35,7 +35,7 @@ class Html
     File.write(File.join(target, "index.html"), template.render(binding))
 
     # Generate JSON and escape the 's, since it will be embedded in javascript
-    # using 's
+    # using 's. The escaped quotes \" need to be escaped twice.
     json = description.to_hash.to_json.gsub("'", "\\\\'").gsub("\"", "\\\\\"")
     File.write(File.join(target, "assets/description.js"),<<-EOT
       function getDescription() {
