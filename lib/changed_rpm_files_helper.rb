@@ -52,7 +52,6 @@ module ChangedRpmFilesHelper
       Machinery::Ui.warn("Warning: Could not perform all tests on rpm changes for file '#{path}'.")
     end
 
-
     [path, changes, type]
   end
 
