@@ -22,7 +22,7 @@ shared_examples "CLI" do
         "#{machinery_command} invalid_command",
         :as => "vagrant",
         :stdout => :capture
-      ) }.to raise_error(ExecutionFailed)
+      ) }.to_not raise_error(ExecutionFailed)
     end
 
     it "processes help option" do
