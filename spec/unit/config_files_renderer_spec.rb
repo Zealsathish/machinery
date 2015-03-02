@@ -142,11 +142,11 @@ describe ConfigFilesRenderer do
           expect(output).to include("/etc/postfix/main.cf (postfix-2.9.6, md5)")
         end
 
-         it "shows all known rpm changes" do
+        it "shows all known rpm changes" do
           output = subject.render(system_description)
 
-          expect(output).to include("/etc/my.cnf (mariadb-5.5.33, size, mode, md5, device_number, " \
-            "link_path, user, group, time, capabilities)")
+          expect(output).to include("/etc/my.cnf (mariadb-5.5.33, size, mode, md5, "\
+            "device_number, link_path, user, group, time, capabilities)")
         end
       end
     end

@@ -19,7 +19,6 @@ require_relative "spec_helper"
 
 include ChangedRpmFilesHelper
 
-
 describe "parse_rpm_changes_line" do
   it "parses an md5 change" do
     line = "..5......  c /etc/pulse/client.conf"
@@ -33,7 +32,9 @@ describe "parse_rpm_changes_line" do
     line = "SM5DLUGTP  c /etc/pulse/client.conf"
     file, changes, flag = parse_rpm_changes_line(line)
     expect(file).to eq("/etc/pulse/client.conf")
-    expect(changes).to eq(["size", "mode", "md5", "device_number", "link_path", "user", "group", "time", "capabilities"])
+    expect(changes).to eq(
+      ["size", "mode", "md5", "device_number", "link_path", "user", "group", "time", "capabilities"]
+    )
     expect(flag).to eq("c")
   end
 
@@ -47,7 +48,8 @@ describe "parse_rpm_changes_line" do
 
   it "shows a warning when a test could be performed" do
     line = "..?......  c /etc/pulse/client.conf"
-    expect(Machinery::Ui).to receive(:warn).with("Warning: Could not perform all tests on rpm changes for file '/etc/pulse/client.conf'.")
+    expect(Machinery::Ui).to receive(:warn).with("Warning: Could not perform all tests on "\
+      "rpm changes for file '/etc/pulse/client.conf'.")
     file, changes, flag = parse_rpm_changes_line(line)
   end
 end
