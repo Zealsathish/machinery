@@ -47,7 +47,7 @@ describe "parse_rpm_changes_line" do
 
   it "shows a warning when a test could be performed" do
     line = "..?......  c /etc/pulse/client.conf"
-    expect(Machinery::Ui).to receive(:warn).with("Could not perform all tests on rpm changes for file '/etc/pulse/client.conf'.")
+    expect(Machinery::Ui).to receive(:warn).with("Warning: Could not perform all tests on rpm changes for file '/etc/pulse/client.conf'.")
     file, changes, flag = parse_rpm_changes_line(line)
   end
 end
