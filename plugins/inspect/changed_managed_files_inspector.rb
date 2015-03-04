@@ -38,7 +38,7 @@ class ChangedManagedFilesInspector < Inspector
 
       existing_files = changed_files.reject do |f|
         f.changes.nil? ||
-        f.changes.include?("deleted")
+        f.changes.include?("deleted") ||
         f.name == "/"
       end
 
