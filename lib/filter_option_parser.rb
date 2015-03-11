@@ -18,60 +18,66 @@
 # This class takes care of transforming the user-provided filter options into
 # actual Filter objects.
 class FilterOptionParser
-  def self.to_filter(command, options, global_options)
-    filter = Filter.from_default_definition(command)
+  class <<self
+    def to_filter(command, options, global_options)
+      filter = Filter.from_default_definition(command)
 
-    if global_options["exclude"]
-      filters = global_options["exclude"].scan(/(@[^,]+)|\"([^,]+?=[^\"]+)\"|([^,]+=[^=]+)$|([^,]+=[^,]+)/).
+      definitions = skip_files_definitions(options.delete("skip-files"))
+      definitions += exclude_definitions(global_options["exclude"])
+
+      definitions.map! { |definition| definition.gsub("\\@", "@") } # Unescape escaped @s
+      definitions.each do |definition|
+        filter.add_element_filter_from_definition(definition)
+      end
+
+      filter
+    end
+
+    private
+
+    def exclude_definitions(exclude)
+      return [] if !exclude
+
+      filters = exclude.scan(/(@[^,]+)|\"([^,]+?=[^\"]+)\"|([^,]+=[^=]+)$|([^,]+=[^,]+)/).
         map(&:compact).flat_map do |filter_definition|
-          if filter_definition[0].start_with?("@")
-            filename = File.expand_path(filter_definition[0][1..-1])
-
-            if !File.exists?(filename)
-              raise Machinery::Errors::MachineryError.new(
-                "The filter file '#{filename}' does not exist."
-              )
-            end
-            File.read(filename).lines.map(&:chomp)
-          else
-            filter_definition
-          end
+        if filter_definition[0].start_with?("@")
+          expand_filter_file(filter_definition[0])
+        else
+          filter_definition
+        end
       end
 
       filters.reject!(&:empty?) # Ignore empty filters
-      filters.map! { |file| file.gsub("\\@", "@") } # Unescape escaped @s
-      filters.each do |filter_definition|
-        filter.add_element_filter_from_definition(filter_definition)
-      end
+      filters
     end
 
-    skip_files = options.delete("skip-files")
-    if skip_files
+    def skip_files_definitions(skip_files)
+      return [] if !skip_files
+
       files = skip_files.split(/(?<!\\),/) # Do not split on escaped commas
       files = files.flat_map do |file|
         if file.start_with?("@")
-          filename = File.expand_path(file[1..-1])
-
-          if !File.exists?(filename)
-            raise Machinery::Errors::MachineryError.new(
-              "The filter file '#{filename}' does not exist."
-            )
-          end
-          File.read(filename).lines.map(&:strip)
+          expand_filter_file(file)
         else
           file
         end
       end
 
       files.reject!(&:empty?) # Ignore empty filters
-      files.map! { |file| file.gsub("\\@", "@") } # Unescape escaped @s
       files.map! { |file| file.chomp("/") } # List directories without the trailing /, in order to
                                             # not confuse the unmanaged files inspector
-      files.each do |file|
-        filter.add_element_filter_from_definition("/unmanaged_files/files/name=#{file}")
-      end
+      files.map { |file| "/unmanaged_files/files/name=#{file}" }
     end
 
-    filter
+    def expand_filter_file(path)
+      filename = File.expand_path(path[1..-1])
+
+      if !File.exists?(filename)
+        raise Machinery::Errors::MachineryError.new(
+          "The filter file '#{filename}' does not exist."
+        )
+      end
+      File.read(filename).lines.map(&:strip)
+    end
   end
 end
