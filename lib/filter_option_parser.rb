@@ -22,9 +22,26 @@ class FilterOptionParser
     filter = Filter.from_default_definition(command)
 
     if global_options["exclude"]
-      global_options["exclude"].scan(/\"([^,]+?=[^\"]+)\"|([^,]+=[^=]+)$|([^,]+=[^,]+)/).
-        map(&:compact).each do |filter_definition|
-          filter.add_element_filter_from_definition(filter_definition)
+      filters = global_options["exclude"].scan(/(@[^,]+)|\"([^,]+?=[^\"]+)\"|([^,]+=[^=]+)$|([^,]+=[^,]+)/).
+        map(&:compact).flat_map do |filter_definition|
+          if filter_definition[0].start_with?("@")
+            filename = File.expand_path(filter_definition[0][1..-1])
+
+            if !File.exists?(filename)
+              raise Machinery::Errors::MachineryError.new(
+                "The filter file '#{filename}' does not exist."
+              )
+            end
+            File.read(filename).lines.map(&:chomp)
+          else
+            filter_definition
+          end
+      end
+
+      filters.reject!(&:empty?) # Ignore empty filters
+      filters.map! { |file| file.gsub("\\@", "@") } # Unescape escaped @s
+      filters.each do |filter_definition|
+        filter.add_element_filter_from_definition(filter_definition)
       end
     end
 

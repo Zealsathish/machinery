@@ -56,6 +56,23 @@ describe FilterOptionParser do
           "/changed_managed_files/files/name=/bar"
         ])
       end
+
+      it "reads filter from a filter definition file" do
+        exclude_file = given_dummy_file("exclude_file")
+        File.write(exclude_file, <<EOF)
+/changed_managed_files/files/change=md5,size
+/changed_managed_files/files/name=/bar
+EOF
+
+        filter = subject.to_filter("inspect", {},
+          { "exclude" => "@#{exclude_file},\"/changed_managed_files/files/name=/baz\"" })
+
+        expect(filter.to_array).to match_array([
+          "/changed_managed_files/files/change=md5,size",
+          "/changed_managed_files/files/name=/bar",
+          "/changed_managed_files/files/name=/baz"
+        ])
+      end
     end
 
     context "with the --skip-files option" do
