@@ -25,6 +25,9 @@ class Cli
   switch :version, negatable: false, desc: "Show version"
   switch :debug, negatable: false, desc: "Enable debug mode"
   switch [:help, :h], negatable: false, desc: "Show help"
+  if Machinery::Config.new.experimental_features
+    flag :exclude, negatable: false, desc: "Exclude elements matching the filter criteria"
+  end
 
   sort_help :manually
   pre do |global_options,command,options,args|

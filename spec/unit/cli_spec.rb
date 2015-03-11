@@ -200,6 +200,25 @@ describe Cli do
         run_command(["inspect", "--skip-files=/foo/bar,/baz", example_host])
       end
 
+      it "forwards the global --exclude option to the InspectTask" do
+        # Manually create the global exclude option. It depends on the experimental_features option,
+        # but that is evaluated when the class is loaded, not when the test is run, so it can't be
+        # stubbed.
+        if !Cli.flags[:exclude]
+          Cli.flag :exclude, negatable: false, desc: "Exclude elements matching the filter criteria"
+        end
+        expect_any_instance_of(InspectTask).to receive(:inspect_system) do |_instance, _store,
+          _host, _name, _user, _scopes, filter, _options|
+          expect(filter.element_filter_for("/unmanaged_files/files/name").matchers).
+            to include("/foo/bar", "/baz")
+        end.and_return(description)
+
+        run_command([
+          "--exclude=/unmanaged_files/files/name=/foo/bar,/unmanaged_files/files/name=/baz",
+          "inspect", example_host
+        ])
+      end
+
       describe "file extraction" do
         it "doesn't extract files when --extract-files is not specified" do
           expect_any_instance_of(InspectTask).to receive(:inspect_system).
