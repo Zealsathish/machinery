@@ -18,6 +18,9 @@
 require_relative "spec_helper"
 
 describe FilterOptionParser do
+  include GivenFilesystemSpecHelpers
+  use_given_filesystem
+
   subject { FilterOptionParser }
 
   describe ".to_filter" do
@@ -57,21 +60,14 @@ describe FilterOptionParser do
 
     context "with the --skip-files option" do
       it "it reads a list of excluded files from a file" do
-        FileUtils.mkdir_p("/tmp")
-        exclude_file = Tempfile.new("exclude_file")
-        begin
-          File.write(exclude_file.path, "/foo/bar\n/baz \n")
-
-          filter = subject.to_filter("inspect", { "skip-files" => "/foo,@#{exclude_file.path}" }, {})
-          expect(filter.to_array).to match_array([
-            "/unmanaged_files/files/name=/foo",
-            "/unmanaged_files/files/name=/foo/bar",
-            "/unmanaged_files/files/name=/baz"
-          ])
-        ensure
-          exclude_file.close
-          exclude_file.unlink
-        end
+        exclude_file = given_dummy_file("exclude_file")
+        File.write(exclude_file, "/foo/bar\n/baz \n")
+        filter = subject.to_filter("inspect", { "skip-files" => "/foo,@#{exclude_file}" }, {})
+        expect(filter.to_array).to match_array([
+          "/unmanaged_files/files/name=/foo",
+          "/unmanaged_files/files/name=/foo/bar",
+          "/unmanaged_files/files/name=/baz"
+        ])
       end
 
       it "handles simple excludes" do
@@ -115,17 +111,17 @@ describe FilterOptionParser do
       end
 
       it "expands filter file paths" do
-        FileUtils.mkdir_p("/tmp")
-        File.write("/tmp/filter_file", "/foo")
+        exclude_file = given_dummy_file("exclude_file")
+        File.write(exclude_file, "/foo")
 
-        filter = subject.to_filter("inspect", { "skip-files" => "@/tmp/foo/../filter_file" }, {})
+        filter = subject.to_filter("inspect", { "skip-files" => "@/foo/../#{exclude_file}" }, {})
         expect(filter.to_array).to eq(["/unmanaged_files/files/name=/foo"])
       end
 
       it "ignores empty filters" do
-        FileUtils.mkdir_p("/tmp")
-        File.write("/tmp/filter_file", "/foo\n\n/bar\n")
-        filter = subject.to_filter("inspect", { "skip-files" => "@/tmp/filter_file" }, {})
+        exclude_file = given_dummy_file("exclude_file")
+        File.write(exclude_file, "/foo\n\n/bar\n")
+        filter = subject.to_filter("inspect", { "skip-files" => "@#{exclude_file}" }, {})
 
         expect(filter.to_array).to eq([
           "/unmanaged_files/files/name=/foo",
