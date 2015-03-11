@@ -30,7 +30,11 @@ describe FilterOptionParser do
 
     context "with the global --exclude option" do
       it "handles simple filter definitions" do
-        filter = subject.to_filter("inspect", {}, { "exclude" => "/unmanaged_files/files/name=/foo" })
+        filter = subject.to_filter(
+          "inspect",
+          {},
+          "exclude" => "/unmanaged_files/files/name=/foo"
+        )
 
         expect(filter.to_array).to match_array([
           "/unmanaged_files/files/name=/foo"
@@ -38,22 +42,28 @@ describe FilterOptionParser do
       end
 
       it "handles multiple filter definitions" do
-        filter = subject.to_filter("inspect", {},
-          { "exclude" => "/unmanaged_files/files/name=/foo,/changed_managed_files/files/name=/bar" })
+        filter = subject.to_filter(
+          "inspect",
+          {},
+          "exclude" => "/unmanaged_files/files/name=/foo,/config_files/files/name=/bar"
+        )
 
         expect(filter.to_array).to match_array([
           "/unmanaged_files/files/name=/foo",
-          "/changed_managed_files/files/name=/bar"
+          "/config_files/files/name=/bar"
         ])
       end
 
       it "handles multiple filter definitions with array matchers" do
-        filter = subject.to_filter("inspect", {},
-          { "exclude" => "\"/changed_managed_files/files/change=md5,size\",/changed_managed_files/files/name=/bar" })
+        filter = subject.to_filter(
+          "inspect",
+          {},
+          "exclude" => "\"/config_files/files/change=md5,size\",/config_files/files/name=/bar"
+        )
 
         expect(filter.to_array).to match_array([
-          "/changed_managed_files/files/change=md5,size",
-          "/changed_managed_files/files/name=/bar"
+          "/config_files/files/change=md5,size",
+          "/config_files/files/name=/bar"
         ])
       end
 
@@ -65,7 +75,7 @@ describe FilterOptionParser do
 EOF
 
         filter = subject.to_filter("inspect", {},
-          { "exclude" => "@#{exclude_file},\"/changed_managed_files/files/name=/baz\"" })
+          "exclude" => "@#{exclude_file},\"/changed_managed_files/files/name=/baz\"")
 
         expect(filter.to_array).to match_array([
           "/changed_managed_files/files/change=md5,size",
@@ -88,7 +98,7 @@ EOF
       end
 
       it "handles simple excludes" do
-        filter = subject.to_filter("inspect", {"skip-files" => "/foo" }, {})
+        filter = subject.to_filter("inspect", { "skip-files" => "/foo" }, {})
 
         expect(filter.to_array).to eq(["/unmanaged_files/files/name=/foo"])
       end
@@ -103,7 +113,11 @@ EOF
       end
 
       it "handles escaped commas" do
-        filter = subject.to_filter("inspect", { "skip-files" => "/foo,/bar,/file\\,with_comma" }, {})
+        filter = subject.to_filter(
+          "inspect",
+          { "skip-files" => "/foo,/bar,/file\\,with_comma" },
+          {}
+        )
 
         expect(filter.to_array).to eq([
           "/unmanaged_files/files/name=/foo",

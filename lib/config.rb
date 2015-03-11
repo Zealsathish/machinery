@@ -25,11 +25,11 @@ module Machinery
       default_config_file(Machinery::DEFAULT_CONFIG_FILE)
 
       entry("hints",
-        default:     true,
+        default: true,
         description: "Show hints about usage of Machinery in the context of the commands ran by the user"
       )
       entry("experimental-features",
-        default:     false,
+        default: false,
         description: "Enable experimental features. Use at your own risk."
       )
     end
