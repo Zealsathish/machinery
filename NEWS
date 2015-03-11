@@ -4,6 +4,7 @@
 * Add `--short` option to list command for showing a short list of all descriptions
 * Improve error output for system descriptions which have outdated formats
 * Add `--skip-files` option to `inspect` command for unmanaged files
+* Add experimental option to exclude elements from inspection. Run `machinery config experimental-features on` to enable the option
 
 ## Version 1.4.0 - Wed Feb 18 16:51:43 CET 2015 - thardeck@suse.de
 
