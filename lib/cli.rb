@@ -455,7 +455,7 @@ class Cli
         inspect_options[:extract_unmanaged_files] = true
       end
 
-      filter = prepare_filter("inspect", options)
+      filter = FilterOptionParser.to_filter("inspect", options, global_options)
 
       inspector_task.inspect_system(
         system_description_store,
@@ -646,39 +646,5 @@ class Cli
     else
       SystemDescriptionStore.new
     end
-  end
-
-
-  def self.prepare_filter(command, options)
-    filter = Filter.from_default_definition(command)
-
-    skip_files = options.delete("skip-files")
-    if skip_files
-      files = skip_files.split(/(?<!\\),/) # Do not split on escaped commas
-      files = files.flat_map do |file|
-        if file.start_with?("@")
-          filename = File.expand_path(file[1..-1])
-
-          if !File.exists?(filename)
-            raise Machinery::Errors::MachineryError.new(
-              "The filter file '#{filename}' does not exist."
-            )
-          end
-          File.read(filename).lines.map(&:strip)
-        else
-          file
-        end
-      end
-
-      files.reject!(&:empty?) # Ignore empty filters
-      files.map! { |file| file.gsub("\\@", "@") } # Unescape escaped @s
-      files.map! { |file| file.chomp("/") } # List directories without the trailing /, in order to
-                                            # not confuse the unmanaged files inspector
-      files.each do |file|
-        filter.add_element_filter_from_definition("/unmanaged_files/files/name=#{file}")
-      end
-    end
-
-    filter
   end
 end
