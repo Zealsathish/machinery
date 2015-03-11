@@ -21,11 +21,41 @@ describe FilterOptionParser do
   subject { FilterOptionParser }
 
   describe ".to_filter" do
-    context "with the --skip-files option" do
-      before(:each) do
-        allow(Filter).to receive(:from_default_definition).and_return(Filter.new)
+    before(:each) do
+      allow(Filter).to receive(:from_default_definition).and_return(Filter.new)
+    end
+
+    context "with the global --exclude option" do
+      it "handles simple filter definitions" do
+        filter = subject.to_filter("inspect", {}, { "exclude" => "/unmanaged_files/files/name=/foo" })
+
+        expect(filter.to_array).to match_array([
+          "/unmanaged_files/files/name=/foo"
+        ])
       end
 
+      it "handles multiple filter definitions" do
+        filter = subject.to_filter("inspect", {},
+          { "exclude" => "/unmanaged_files/files/name=/foo,/changed_managed_files/files/name=/bar" })
+
+        expect(filter.to_array).to match_array([
+          "/unmanaged_files/files/name=/foo",
+          "/changed_managed_files/files/name=/bar"
+        ])
+      end
+
+      it "handles multiple filter definitions with array matchers" do
+        filter = subject.to_filter("inspect", {},
+          { "exclude" => "\"/changed_managed_files/files/change=md5,size\",/changed_managed_files/files/name=/bar" })
+
+        expect(filter.to_array).to match_array([
+          "/changed_managed_files/files/change=md5,size",
+          "/changed_managed_files/files/name=/bar"
+        ])
+      end
+    end
+
+    context "with the --skip-files option" do
       it "it reads a list of excluded files from a file" do
         FileUtils.mkdir_p("/tmp")
         exclude_file = Tempfile.new("exclude_file")

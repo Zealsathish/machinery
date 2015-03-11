@@ -21,6 +21,13 @@ class FilterOptionParser
   def self.to_filter(command, options, global_options)
     filter = Filter.from_default_definition(command)
 
+    if global_options["exclude"]
+      global_options["exclude"].scan(/\"([^,]+?=[^\"]+)\"|([^,]+=[^=]+)$|([^,]+=[^,]+)/).
+        map(&:compact).each do |filter_definition|
+          filter.add_element_filter_from_definition(filter_definition)
+      end
+    end
+
     skip_files = options.delete("skip-files")
     if skip_files
       files = skip_files.split(/(?<!\\),/) # Do not split on escaped commas
