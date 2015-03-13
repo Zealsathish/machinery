@@ -56,7 +56,7 @@ describe InspectTask, "#inspect_system" do
       description.bar = result
     end
 
-    def summary(description)
+    def summary(_description)
       "summary"
     end
   end
@@ -113,11 +113,10 @@ describe InspectTask, "#inspect_system" do
 
     expected = SimpleInspectTaskScope.new(
       files: SimpleInspectTaskList.new([
-          Machinery::Object.new(name: "foo"),
-          Machinery::Object.new(name: "bar"),
-          Machinery::Object.new(name: "baz"),
-        ]
-      )
+        Machinery::Object.new(name: "foo"),
+        Machinery::Object.new(name: "bar"),
+        Machinery::Object.new(name: "baz"),
+      ])
     )
     expect(description.foo).to eql(expected)
   end

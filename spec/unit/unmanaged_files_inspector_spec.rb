@@ -340,7 +340,8 @@ describe UnmanagedFilesInspector do
       subject.inspect(system, description, default_filter)
 
       expect(description["unmanaged_files"]).to eq(expected_data)
-      expect(subject.summary(description)).to include("Found #{expected_data.files.size} unmanaged files and trees")
+      expect(subject.summary(description)).
+        to include("Found #{expected_data.files.size} unmanaged files and trees")
     end
 
     it "returns sorted data" do
@@ -400,7 +401,8 @@ describe UnmanagedFilesInspector do
       )
 
       expect(description["unmanaged_files"]).to eq(expected_data_meta)
-      expect(subject.summary(description)).to include("Extracted #{expected_data.files.size} unmanaged files and trees")
+      expect(subject.summary(description)).
+        to include("Extracted #{expected_data.files.size} unmanaged files and trees")
       cfdir = description.scope_file_store("unmanaged_files").path
       expect(File.stat(cfdir).mode.to_s(8)[-3..-1]).to eq("700")
     end

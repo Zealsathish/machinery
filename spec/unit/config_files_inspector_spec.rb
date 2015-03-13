@@ -263,7 +263,7 @@ EOF
       expect_inspect_configfiles(system, true)
 
       inspector = ConfigFilesInspector.new
-      inspector.inspect(system, description, filter, :extract_changed_config_files => true )
+      inspector.inspect(system, description, filter, extract_changed_config_files: true )
       expect(inspector.summary(description)).to include("Extracted 6 changed configuration files")
       cfdir = File.join(store.description_path(name), "config_files")
       expect(File.stat(cfdir).mode & 0777).to eq(0700)
@@ -278,7 +278,7 @@ EOF
       expect_inspect_configfiles(system, true)
 
       inspector = ConfigFilesInspector.new
-      inspector.inspect(system, description, filter, :extract_changed_config_files => true)
+      inspector.inspect(system, description, filter, extract_changed_config_files: true)
       expect(inspector.summary(description)).to include("Extracted 6 changed configuration files")
       expect(File.stat(cfdir).mode & 0777).to eq(0750)
     end
