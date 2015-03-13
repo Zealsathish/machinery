@@ -552,6 +552,7 @@ class Cli
       description = SystemDescription.load(name, system_description_store)
       scope_list = process_scope_option(options[:scope], options["exclude-scope"])
 
+      filter = FilterOptionParser.to_filter("show", options, global_options)
 
       task = ShowTask.new
       opts = {
@@ -559,7 +560,7 @@ class Cli
           show_diffs: options["show-diffs"],
           show_html:  options["html"]
       }
-      task.show(description, scope_list, opts)
+      task.show(description, scope_list, filter, opts)
     end
   end
 
