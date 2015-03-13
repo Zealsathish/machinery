@@ -26,11 +26,13 @@ module Machinery
 
       entry("hints",
         default: true,
-        description: "Show hints about usage of Machinery in the context of the commands ran by the user"
+        description: "Show hints about usage of Machinery in the context of the commands ran by" \
+          " the user"
       )
       entry("experimental-features",
         default: false,
-        description: "Enable experimental features. Use at your own risk."
+        description: "Enable experimental features. See " \
+          "https://github.com/SUSE/machinery/wiki/Experimental-Features for more details."
       )
     end
   end
