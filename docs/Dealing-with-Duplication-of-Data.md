@@ -105,4 +105,123 @@ In the context of the internal consistency of system description we have a numbe
 
 ## Concept
 
-We need to define a concept which addresses the requirements in the context of the relevant use cases.
+This section describes the concept how we address the issue of consistency of the system description and how we provide the necessary tools for the user to handle this data. It has two main goals:
+
+* Make it transparent to the user what is happening and why
+* Give user control to adapt the tool to their needs and use cases
+
+### Duplication of data
+
+With scopes covering the same data from different views, e.g. a configuration file in the config-files scope, and the data extraced from the file in the manifest, some data is duplicated. This gives the full picture and can be useful to the user. So the basic approach is to not try to prevent duplication of data, but make it transparent and controllable what effect the duplication has.
+
+This makes writing scopes easier, because they can do simple extraction of data without having to care about effects on other scopes, provided it is clearly defined how the data is used.
+
+### Sequence of operations
+
+When using Machinery each invocation results in a sequence of operations which are applied to a give set of scopes. The exact sequence and the set of scopes define the result. For an inspection that would be applying filters, then inspecting the data belonging to the scopes, and storing it to a description. For an image build that would be reading the description, exporting the data for each scope, applying export filters, and running the build.
+
+For inspection the sequence does not matter, it only matters which scopes are used, but the result is independent of what is done when.
+
+For export it does matter, if data which is present in the manifest part for a scope is applied first or the same data stored in a file in a file scope is applied first. If the file is applied first and then the manifest, the file is overwritten.
+
+The default sequence is to first apply the files and then apply the data from the manifest. The user can prevent that the manifest data is overwriting the file data by excluding the scope which has the manifest data from the export. This gives full control about the result.
+
+To make it easier for users to achieve commonly required results, it might make sense to exclude some scopes from the export by default.
+
+### Definition of scopes
+
+To make it explicit what dependencies and implications a scope has we add an explicit definition of a scope. This is a YAML file, which defines, what filters to apply, what belongs to the scope and other meta data.
+
+#### Filter definition
+
+A minimal scope definition based on the current state of functionality is for example a file `scopes/users.yaml` defining the filters which are implied by the users scope:
+
+```yaml
+filters:
+  inspect:
+    /unmanaged_files/files/name=/etc/passwd
+```
+
+Instead of hard-coding the filter in the unmanaged files inspector it is taken up from the scope file.
+
+Another example is `scopes/repositories.yam`:
+
+```yaml
+filters:
+  export:
+    /unmanaged_files/files/name=/etc/zypp/repos.d/*
+```
+
+This defines the filter, which is currently hard-coded in the export code.
+
+By moving the filters to the scope definitions, the context why they are needed is preserved. The code which needs them, can simply iterate over the scope definitions and add all the filters defined there to the list of filters effectively to be applied.
+
+Filters can gradually moved from hard-coded central locations to the scopes.
+
+#### Name
+
+The scope is displayed in the UI using the implied name determined from the source code files. To make it easier to define user-friendly names and also make the context of the scope definitions explicit it has an entry defining the display name, e.g.:
+
+```yaml
+name: Users
+```
+
+#### Additional attributes
+
+The scope definition can be used to store additional attributes in the future, e.g. information about if a scope is used in export by default, dependencies between scopes, references to the other files which belong to the scope, etc.
+
+The following example illustrates the general ideas. Its values don't make sense as is, and the attributes might have to be named and structured differently. It would have to be refined before it could be implemented.
+
+```yaml
+name: Example scope
+
+filters:
+  inspect:
+    /unmanaged_files/files/name=/etc/passwd
+  export:
+    /unmanaged_files/files/name=/etc/zypp/repos.d/*
+
+active:
+  export: false
+
+files:
+  schema: plugins/schema/v3/system-description-example.schema.json
+  model: plugins/model/example_model.rb
+  inspect: plugins/inspect/example_inspector.rb
+  show: plugins/show/example_renderer.rb
+  docs: plugins/docs/example.md
+```
+
+### Scopes as plugins
+
+When it's clear how the data of scopes is used and it's not a problem if additional possibly duplicated data is present, it makes sense to make it as easy as possible to add scopes just to get more information about a system on inspection. This can be solved by providing new scopes as plugins.
+
+With the scope being the central unit, the files the scope consists of should be structured in a more central way. The easiest solution would be to have a directory per scope in the `scopes` directory, which at least contains a scope definition file as described above. Additional files such as a model, an inspector, etc can be added and either be automatically recognized based on naming convention or explicitly referenced by the `files` section proposed for the scope definition file.
+
+### Analysis as scope
+
+The data which is put into the manifest of the description usually is extracted from files, which in many cases are also present in the system description.
+
+In principle this can be done at inspection time but also later. For example the user scope could also instead of creating the manifest data during inspection just extract the `/etc/passwd` file and run the analysis of what users are in there later.
+
+In this sense the operations of the `analyze` and the `inspect` command are very similar and they could be unified by making the `analyze` operations normal scopes which are flagged as operating on an existing description, not being constructed at inspection time. For convenience they could be run at inspection, though.
+
+As an option for the future the `analyze` command could be replaced by introducing corresponding scopes which are marked as being able to run on a description. Some scopes such as `users` or `groups` could be marked in the same way. As a result the user would have full control about what data is extracted (possibly duplicated), and what operations are applied on inspection, simply by providing a list of scopes.
+
+### Validation of consistency
+
+When the data in the manifest can be derived from file data in the description, it can be run and checked at any point in time. It can also be used to check if the data in the manifest is consistent with the data in files. This could be exposed to the user in the future in form of a validation command, which detects inconsistencies.
+
+### Summary
+
+The core characteristics of the concept for dealing with the consistency of the system description can be summarized as follows:
+
+* Duplication of data is accepted because it can help to provide additional insight to the user.
+* Implications and dependencies of a scope are expressed in a scope definition file.
+* Data from file scopes is applied before data from the manifest is applied. The user can control what data is applied by defining which scopes are used.
+
+Future refinements include:
+
+* Structure scope plugins in individual directories, which contain everything which belongs to the scope.
+* Possibly move analyze operations to scopes.
+* Provide a command to validate consistency of data in a system description.
