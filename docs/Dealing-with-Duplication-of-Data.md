@@ -22,15 +22,15 @@ The current approach is to avoid inconsistencies by filtering files duplicating 
 
 During inspection for some scopes (e.g. for users and groups) all the information contained in the configuration files (`/etc/passwd` and `/etc/group` in the example) is put into the manifest. The file where the information is coming from then is not extracted by the inspection.
 
-For other cases files duplicated information contained in the manifest is filtered out on export, when an image is build, or a kiwi or AutoYaST profile is exported. For example the yum configuration files are not exported, but new ones are created based on the information in the manifest. The list of these files is hard-coded in the exporter.
+For other cases duplicated information contained in the manifest is filtered out on export, when an image is built, or a kiwi or AutoYaST profile is exported. For example the yum configuration files are not exported, but new ones are created based on the information in the manifest. The list of these files is hard-coded in the exporter.
 
 In a third case there is information in the system description, which is only used for information, but ignored otherwise (the diffs of config files relative to the version coming from its package).
 
-So, the current approach tries no to apply config files when they are already covered on a more abstract level. This avoids duplication of data in some cases, but it has some issues:
+So, the current approach tries not to apply config files when they are already covered on a more abstract level. This avoids duplication of data in some cases, but it has some issues:
 
 * If extraction of information from a configuration file to the manifest is not 100% complete or accurate, information is lost.
 * If the list of files filtered on export is not complete (for example when there is plugin configuration at a different location, the place where configuration is held is modified, additional information is fed in from a sysconfig file, or configuration is determined dynamically), there can be inconsistencies or broken setups in the exported data.
-* There is no well-defined order how configuration is applied (in some cases the file overrides the manifest, in others it doesn't, in other cases information is not applies at all)
+* There is no well-defined order how configuration is applied (in some cases the file overrides the manifest, in others it doesn't, in other cases information is not applied at all)
 
 ## Abstraction levels of configuration
 
@@ -42,7 +42,7 @@ Looking at configuration files as opaque objects preserves all the state, but do
 
 ### Parsed raw data
 
-If the format of a configuration file is known, it can be parsed into a more high-level representation maintaining all information in a generic way (e.g. parsing an INI-style config file into a JSON representation). This can provide some generic insight into the configuration, but requires the user to still have knowledge about the details of the configuration and how its represented. There also is a chance that some minor information is lost, when the parser is not perfect (e.g. comments, ordering of entries, etc.)
+If the format of a configuration file is known, it can be parsed into a more high-level representation maintaining all information in a generic way (e.g. parsing an INI-style config file into a JSON representation). This can provide some generic insight into the configuration, but requires the user to still have knowledge about the details of the configuration and how it is represented. There also is a chance that some minor information is lost, when the parser is not perfect (e.g. comments, ordering of entries, etc.)
 
 ### Extracted information
 
@@ -68,7 +68,7 @@ Which level of abstraction is useful depends on the use case. Examples:
 
 ### Configuration discovery
 
-When analysing a system, especially when trying to figure out what an unknown system does, all levels of abstraction are helpful. Even the same data on different levels can be helpful. The more data is available the more easy it is for the user to find and judge the configuration of the system.
+When analyzing a system, especially when trying to figure out what an unknown system does, all levels of abstraction are helpful. Even the same data on different levels can be helpful. The more data is available the easier it is for the user to find and judge the configuration of the system.
 
 ### Replication of a system
 
@@ -76,7 +76,7 @@ When recovering a system or when replicating it in general, a higher abstraction
 
 ### Migration
 
-For a migration use case it depends on what level of abstraction the migration is taking place. When it is a low-level migration such as migrating a physical to a virtual system, the use case is closer to a replication of a system. When it on a higher level, e.g. when moving a service from one operating system to another, the lower level configuration might simply not work because the config file format could have changed or even a different tool used which provides the same service (e.g. Lighttpd instead of Apache). But correct configuration can be deduced from the higher level representation.
+For a migration use case it depends on what level of abstraction the migration is taking place. When it is a low-level migration such as migrating a physical to a virtual system, the use case is closer to a replication of a system. When it is on a higher level, e.g. when moving a service from one operating system to another, the lower level configuration might simply not work because the config file format could have changed or even a different tool used which provides the same service (e.g. Lighttpd instead of Apache). But correct configuration can be deduced from the higher level representation.
 
 For all migration use cases it is important that the result is in a consistent state, so that the target system is functional in itself.
 
@@ -91,13 +91,13 @@ There can't be a clear preference here. The challenge is to avoid problems cause
 
 In the context of the internal consistency of system description we have a number of requirements:
 
-* No data should be lost, unless explicitly desired by the user.
+* No data should be lost without the user being aware of it or explicitly desiring it.
 * For gaining insight into a system it should be easy to get data, or add new functionality to gather additional data, or process existing data to get more insight.
 * A system description obtained by inspection should be usable in different use cases, which might not be known yet during inspection. This means we don't know which level of abstraction we will need.
 * There are more ways to get a system description besides inspection:
   * Creation of a system description using an editor
   * Composition of a system description using hierarchical templates
-  * Import from a different format (e.g. kiwi, AutoYaST)
+  * Import from a different format (e.g. KIWI, AutoYaST)
 * When a description is applied or exported the result should be consistent and working.
 * It should be transparent what happens during inspection and export, so that the user is able to diagnose and fix problems.
 * The user should be in control of how configuration is applied and which level of abstraction is used depending on the use case.
