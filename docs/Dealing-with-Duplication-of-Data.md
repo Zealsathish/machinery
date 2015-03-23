@@ -118,9 +118,9 @@ This makes writing scopes easier, because they can do simple extraction of data 
 
 ### Sequence of operations
 
-When using Machinery each invocation results in a sequence of operations which are applied to a give set of scopes. The exact sequence and the set of scopes define the result. For an inspection that would be applying filters, then inspecting the data belonging to the scopes, and storing it to a description. For an image build that would be reading the description, exporting the data for each scope, applying export filters, and running the build.
+When using Machinery each invocation results in a sequence of operations which are applied to a give set of scopes. The exact sequence and the set of scopes define the result. For an inspection that would be applying global filters, then inspecting the data belonging to the scopes, and storing it to a description. For an image build that would be reading the description, exporting the data for each scope, applying export filters, and running the build.
 
-For inspection the sequence does not matter, it only matters which scopes are used, but the result is independent of what is done when.
+For inspection the sequence does not matter, it only matters which scopes are used, but the result is independent of what is done when. Scopes never require exclusion of files, not even when the files are read and their data is extracted into the manifest. The duplication of information is handled later.
 
 For export it does matter, if data which is present in the manifest part for a scope is applied first or the same data stored in a file in a file scope is applied first. If the file is applied first and then the manifest, the file is overwritten.
 
@@ -134,17 +134,7 @@ To make it explicit what dependencies and implications a scope has we add an exp
 
 #### Filter definition
 
-A minimal scope definition based on the current state of functionality is for example a file `scopes/users.yaml` defining the filters which are implied by the users scope:
-
-```yaml
-filters:
-  inspect:
-    /unmanaged_files/files/name=/etc/passwd
-```
-
-Instead of hard-coding the filter in the unmanaged files inspector it is taken up from the scope file.
-
-Another example is `scopes/repositories.yam`:
+An example for a minimal filter definition based on the current functionality is a file `scopes/repositories.yam` with the content:
 
 ```yaml
 filters:
@@ -156,7 +146,7 @@ This defines the filter, which is currently hard-coded in the export code.
 
 By moving the filters to the scope definitions, the context why they are needed is preserved. The code which needs them, can simply iterate over the scope definitions and add all the filters defined there to the list of filters effectively to be applied.
 
-Filters can gradually moved from hard-coded central locations to the scopes.
+Filters can gradually be moved from hard-coded central locations to the scopes. The scope-specific inspection filters should be removed.
 
 #### Name
 
@@ -170,16 +160,14 @@ name: Users
 
 The scope definition can be used to store additional attributes in the future, e.g. information about if a scope is used in export by default, dependencies between scopes, references to the other files which belong to the scope, etc.
 
-The following example illustrates the general ideas. Its values don't make sense as is, and the attributes might have to be named and structured differently. It would have to be refined before it could be implemented.
+The following example illustrates the general ideas. Its values don't make sense as is, and the attributes might have to be named and structured differently. It needs to be refined before it can be implemented.
 
 ```yaml
 name: Example scope
 
 filters:
-  inspect:
-    /unmanaged_files/files/name=/etc/passwd
   export:
-    /unmanaged_files/files/name=/etc/zypp/repos.d/*
+    /unmanaged_files/files/name=/etc/example/conf.d/*
 
 active:
   export: false
