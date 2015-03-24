@@ -17,7 +17,9 @@
 
 shared_examples "kiwi export" do
   after(:all) do
-    @machinery.run_command("test -d /tmp/jeos-kiwi && rm -r /tmp/jeos-kiwi")
+    if @machinery.running?
+      @machinery.run_command("test -d /tmp/jeos-kiwi && rm -r /tmp/jeos-kiwi")
+    end
   end
 
   describe "export-kiwi" do

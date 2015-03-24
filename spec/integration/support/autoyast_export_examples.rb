@@ -17,7 +17,9 @@
 
 shared_examples "autoyast export" do
   after(:all) do
-    @machinery.run_command("test -d /tmp/jeos-autoyast && rm -r /tmp/jeos-autoyast")
+    if @machinery.running?
+      @machinery.run_command("test -d /tmp/jeos-autoyast && rm -r /tmp/jeos-autoyast")
+    end
   end
 
   describe "export-autoyast" do
