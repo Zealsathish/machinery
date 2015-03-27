@@ -48,7 +48,8 @@ class ElementFilter
         when String
           if matcher.is_a?(Array)
             exception = Machinery::Errors::ElementFilterTypeMismatch.new
-            exception.failed_matcher = "#{path}#{FilterOperator.to_string(operator)}#{matcher.join(",")}"
+            exception.failed_matcher =
+              "#{path}#{FilterOperator.to_string(operator)}#{matcher.join(",")}"
             raise exception
           end
 
