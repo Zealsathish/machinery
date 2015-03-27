@@ -51,14 +51,14 @@ class Filter
     Array(filter_definitions).each do |definition|
       path, operator, matcher_definition = definition.scan(/([a-zA-Z_\/]+)(.*=)(.*)/)[0]
 
-      element_filters[path] ||= ElementFilter.new(path, operator)
+      element_filters[path] ||= ElementFilter.new(path)
       if matcher_definition.index(",")
         matchers = matcher_definition.split(/(?<!\\),/)
         matchers.map! { |matcher| matcher.gsub("\\,", ",") } # Unescape escaped commas
 
-        element_filters[path].add_matchers([matchers])
+        element_filters[path].add_matchers(operator => [matchers])
       else
-        element_filters[path].add_matchers(matcher_definition)
+        element_filters[path].add_matchers(operator => matcher_definition)
       end
     end
 
@@ -89,7 +89,7 @@ class Filter
     new_element_filters = Filter.parse_filter_definitions(filter_definition)
 
     new_element_filters.each do |path, element_filter|
-      @element_filters[path] ||= ElementFilter.new(path, element_filter.operator)
+      @element_filters[path] ||= ElementFilter.new(path)
       @element_filters[path].add_matchers(element_filter.matchers)
     end
   end
@@ -97,8 +97,7 @@ class Filter
   def add_element_filters(element_filters)
     Array(element_filters).each do |element_filter|
       path = element_filter.path
-      operator = element_filter.operator
-      @element_filters[path] ||= ElementFilter.new(path, operator)
+      @element_filters[path] ||= ElementFilter.new(path)
       @element_filters[path].add_matchers(element_filter.matchers)
     end
   end
@@ -123,8 +122,10 @@ class Filter
 
   def to_array
     @element_filters.flat_map do |path, element_filter|
-      element_filter.matchers.map do |matcher|
-        "#{path}#{element_filter.operator}#{Array(matcher).join(",")}"
+      element_filter.matchers.flat_map do |operator, matchers|
+        matchers.map do |matcher|
+          "#{path}#{operator}#{Array(matcher).join(",")}"
+        end
       end
     end
   end
