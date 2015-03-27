@@ -61,6 +61,13 @@ describe ElementFilter do
       filter.add_matchers(:== => [["md5", "size"]])
       expect(filter.matchers).to eq(:== => [["md5", "size"]])
     end
+
+    it "raises an exception when invalid operators are used" do
+      filter = ElementFilter.new(@path)
+      expect {
+        filter.add_matchers(">=" => ["foo"])
+      }.to raise_error(Machinery::Errors::InvalidFilter)
+    end
   end
 
   describe "#matchers" do
