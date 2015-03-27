@@ -31,7 +31,7 @@ class ElementFilter
 
   def add_matchers(additional)
     additional.keys.each do |operator|
-      if !["!=", "="].include?(operator)
+      if ![:!=, :==].include?(operator)
         raise Machinery::Errors::InvalidFilter.new("Wrong filter operator '#{operator}'")
       end
     end
@@ -53,7 +53,7 @@ class ElementFilter
         when String
           if matcher.is_a?(Array)
             exception = Machinery::Errors::ElementFilterTypeMismatch.new
-            exception.failed_matcher = "#{path}#{operator}#{matcher.join(",")}"
+            exception.failed_matcher = "#{path}#{Filter.operator_to_string(operator)}#{matcher.join(",")}"
             raise exception
           end
 
@@ -63,9 +63,9 @@ class ElementFilter
             value == matcher
           end
         end
-        if operator == "="
+        if operator == :==
           return true if values_equal
-        elsif operator == "!="
+        elsif operator == :!=
           return true if !values_equal
         end
       end

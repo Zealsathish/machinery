@@ -22,26 +22,26 @@ describe Filter do
     it "parses array of definitions" do
       element_filter = Filter.parse_filter_definitions(["/foo=bar", "/baz=qux"])
       expect(element_filter.keys.length).to eq(2)
-      expect(element_filter["/foo"].matchers).to eq("=" => ["bar"])
-      expect(element_filter["/baz"].matchers).to eq("=" => ["qux"])
+      expect(element_filter["/foo"].matchers).to eq(:== => ["bar"])
+      expect(element_filter["/baz"].matchers).to eq(:== => ["qux"])
     end
 
     it "parses definition with multiple matcher" do
       element_filter = Filter.parse_filter_definitions("/foo=bar,baz")
       expect(element_filter.keys.length).to eq(1)
-      expect(element_filter["/foo"].matchers).to eq("=" => [["bar", "baz"]])
+      expect(element_filter["/foo"].matchers).to eq(:== => [["bar", "baz"]])
     end
 
     it "parses definition with 'equals not' operator" do
       element_filter = Filter.parse_filter_definitions("/foo!=bar,baz")
       expect(element_filter.keys.length).to eq(1)
-      expect(element_filter["/foo"].matchers).to eq("!=" => [["bar", "baz"]])
+      expect(element_filter["/foo"].matchers).to eq(:!= => [["bar", "baz"]])
     end
 
     it "handles escaped commas" do
       element_filter = Filter.parse_filter_definitions("/foo=bar,baz\\,qux")
       expect(element_filter.keys.length).to eq(1)
-      expect(element_filter["/foo"].matchers).to eq("=" => [["bar", "baz,qux"]])
+      expect(element_filter["/foo"].matchers).to eq(:== => [["bar", "baz,qux"]])
     end
 
     it "fails on unknown operators" do
@@ -66,7 +66,7 @@ describe Filter do
 
       expect(filters.keys.length).to eq(1)
       expect(filters["/unmanaged_files/files/name"].path).to eq("/unmanaged_files/files/name")
-      expect(filters["/unmanaged_files/files/name"].matchers).to eq("=" => ["/home/alfred"])
+      expect(filters["/unmanaged_files/files/name"].matchers).to eq(:== => ["/home/alfred"])
     end
   end
 
@@ -76,8 +76,8 @@ describe Filter do
       filter.add_element_filter_from_definition("bar=baz")
 
       element_filters = filter.element_filters
-      expect(element_filters["foo"].matchers).to eq("=" => [["bar", "baz"]])
-      expect(element_filters["bar"].matchers).to eq("=" => ["baz"])
+      expect(element_filters["foo"].matchers).to eq(:== => [["bar", "baz"]])
+      expect(element_filters["bar"].matchers).to eq(:== => ["baz"])
     end
 
     it "merges new definitions with existing element filter" do
@@ -85,7 +85,7 @@ describe Filter do
       filter.add_element_filter_from_definition("foo=qux")
 
       element_filters = filter.element_filters
-      expect(element_filters["foo"].matchers).to eq("=" => [["bar", "baz"], "qux"])
+      expect(element_filters["foo"].matchers).to eq(:== => [["bar", "baz"], "qux"])
     end
   end
 
@@ -108,11 +108,11 @@ describe Filter do
 
       element_filter = filter.element_filter_for("/unmanaged_files/files/name")
       expect(element_filter.path).to eq("/unmanaged_files/files/name")
-      expect(element_filter.matchers).to eq("=" => ["/home/alfred", "/var/cache"])
+      expect(element_filter.matchers).to eq(:== => ["/home/alfred", "/var/cache"])
 
       element_filter = filter.element_filter_for("/changed_managed_files/files/changes")
       expect(element_filter.path).to eq("/changed_managed_files/files/changes")
-      expect(element_filter.matchers).to eq("=" => [["md5", "size"]])
+      expect(element_filter.matchers).to eq(:== => [["md5", "size"]])
     end
   end
 
@@ -127,8 +127,8 @@ describe Filter do
       ])
 
       expected = [
-        ElementFilter.new("/unmanaged_files/files/name", "=" => ["/home/alfred", "/var/cache"]),
-        ElementFilter.new("/unmanaged_files/files/changes", "=" => [["md5", "size"]])
+        ElementFilter.new("/unmanaged_files/files/name", :== => ["/home/alfred", "/var/cache"]),
+        ElementFilter.new("/unmanaged_files/files/changes", :== => [["md5", "size"]])
       ]
       expect(filter.element_filters_for_scope("unmanaged_files")).to eq(expected)
     end
@@ -145,8 +145,8 @@ describe Filter do
       ])
 
       expected = [
-        ElementFilter.new("/unmanaged_files/files/name", "=" => ["/home/alfred", "/var/cache"]),
-        ElementFilter.new("/unmanaged_files/files/changes", "=" => [["md5", "size"]])
+        ElementFilter.new("/unmanaged_files/files/name", :== => ["/home/alfred", "/var/cache"]),
+        ElementFilter.new("/unmanaged_files/files/changes", :== => [["md5", "size"]])
       ]
       filter.set_element_filters_for_scope("unmanaged_files", expected)
 

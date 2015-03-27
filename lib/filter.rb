@@ -51,6 +51,8 @@ class Filter
     Array(filter_definitions).each do |definition|
       path, operator, matcher_definition = definition.scan(/([a-zA-Z_\/]+)(.*=)(.*)/)[0]
 
+      operator = string_to_operator(operator)
+
       element_filters[path] ||= ElementFilter.new(path)
       if matcher_definition.index(",")
         matchers = matcher_definition.split(/(?<!\\),/)
@@ -79,6 +81,28 @@ class Filter
     end
 
     filter
+  end
+
+  def self.string_to_operator(operator)
+    case operator
+    when "="
+      :==
+    when "!="
+      :!=
+    else
+      operator
+    end
+  end
+
+  def self.operator_to_string(operator)
+    case operator
+    when :==
+      "="
+    when :!=
+      "!="
+    else
+      operator.to_s
+    end
   end
 
   def initialize(definitions = [])
@@ -124,7 +148,7 @@ class Filter
     @element_filters.flat_map do |path, element_filter|
       element_filter.matchers.flat_map do |operator, matchers|
         matchers.map do |matcher|
-          "#{path}#{operator}#{Array(matcher).join(",")}"
+          "#{path}#{Filter.operator_to_string(operator)}#{Array(matcher).join(",")}"
         end
       end
     end
