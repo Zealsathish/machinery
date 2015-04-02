@@ -50,6 +50,8 @@ apache2-2.4.6
 /etc/apache2/default-vhost.conf
 /etc/apache2/errors.conf
 yast2-pkg-bindings-3.1.1
+apache2-2.4.6
+/etc/apache2/charset.conv
 EOF
     }
     let(:rpm_qa_output_test2) {
@@ -70,6 +72,7 @@ S.5....T.  c /etc/sysconfig/SuSEfirewall2.d/services/apache2
 missing    c /usr/share/info/dir
 S.5....T.    /etc/sysconfig/ignore_me_cause_im_not_a_config_file
 .........  c /usr/share/man/man1/time.1.gz (replaced)
+..5....T.  c /etc/apache2/listen.conf
 EOF
     }
     let(:rpm_v_openiscsi_output) {
