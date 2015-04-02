@@ -39,10 +39,10 @@ module Machinery
         @pager.close if @pager
       end
 
-      def puts(output)
+      def print(output)
         if !use_pager || !$stdout.tty?
           begin
-            STDOUT.puts output
+            STDOUT.print output
           rescue Errno::EPIPE
             # We just ignore broken pipes.
           end
@@ -54,7 +54,7 @@ module Machinery
               LocalSystem.validate_existence_of_package("less")
               write_output_to_pager(output)
             rescue Machinery::Errors::MissingRequirement
-              STDOUT.puts output
+              STDOUT.print output
             end
           else
             IO.popen("$PAGER &>/dev/null", "w") { |f| f.close }
@@ -68,6 +68,10 @@ module Machinery
             end
           end
         end
+      end
+
+      def puts(output)
+        print output + "\n"
       end
 
       def warn(s)

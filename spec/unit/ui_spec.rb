@@ -57,7 +57,7 @@ describe Machinery::Ui do
       allow($stdout).to receive(:tty?).and_return(true)
       allow(LocalSystem).to receive(:validate_existence_of_package).
         and_raise(Machinery::Errors::MissingRequirement)
-      expect($stdout).to receive(:puts).with(output)
+      expect($stdout).to receive(:print).with(output + "\n")
 
       Machinery::Ui.puts(output)
     end
