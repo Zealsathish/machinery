@@ -39,15 +39,15 @@ class UpgradeFormatTask
         Machinery::Ui.print "Reading \"#{description}\" ... "
         migrated = Migration.migrate_description(store, description, force: options[:force])
 
-       if migrated
+        if migrated
           migrations_done += 1
-          Machinery::Ui.puts "successfully upgraded from version #{hash["meta"]["format_version"]} to #{SystemDescription::CURRENT_FORMAT_VERSION}."
+          Machinery::Ui.puts "successfully upgraded from version" \
+            " #{hash["meta"]["format_version"]} to #{SystemDescription::CURRENT_FORMAT_VERSION}."
         end
       rescue StandardError => e
         errors.push("Upgrading description \"#{description}\" failed:\n#{e}")
       end
     end
-
 
     if !errors.empty?
       Machinery.logger.error errors.join("\n")
