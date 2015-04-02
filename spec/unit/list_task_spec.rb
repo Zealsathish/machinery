@@ -65,10 +65,10 @@ describe ListTask do
     it "lists the system descriptions with scopes" do
       system_description.save
       expected_output = <<-EOF
-
  foo:
    * packages
    * repositories
+
 
 EOF
       list_task.list(store)
@@ -78,8 +78,8 @@ EOF
     it "if short is true it lists only the description names" do
       system_description.save
       expected_output = <<-EOF.chomp
-
 foo
+
 EOF
       list_task.list(store, short: true)
       expect(captured_machinery_output).to eq(expected_output)
