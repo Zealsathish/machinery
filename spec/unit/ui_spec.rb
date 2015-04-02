@@ -35,6 +35,14 @@ describe Machinery::Ui do
   end
 
   describe ".puts" do
+    it "shows output with linebreak at the end" do
+      output = "test output"
+      expect($stdout).to receive(:print).with(output + "\n")
+      Machinery::Ui.puts(output)
+    end
+  end
+
+  describe ".print" do
     before(:each) do ||
       expect(Machinery::Ui).to receive(:use_pager).and_return(true)
     end
