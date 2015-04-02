@@ -57,7 +57,7 @@ class UpgradeFormatTask
     end
 
     if options[:all]
-      migrations_done == 1? frequency = "description": frequency = "descriptions"
+      migrations_done == 1 ? frequency = "description" : frequency = "descriptions"
       if migrations_done > 0
         Machinery::Ui.puts "Upgraded #{migrations_done} system #{frequency}."
       else
