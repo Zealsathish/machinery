@@ -50,7 +50,7 @@ apache2-2.4.6
 /etc/apache2/default-vhost.conf
 /etc/apache2/errors.conf
 yast2-pkg-bindings-3.1.1
-EOF
+      EOF
     }
     let(:rpm_qa_output_test2) {
       <<-EOF
@@ -60,7 +60,28 @@ texlive-bbcard-2013.72.svn19440
 yast2-pkg-bindings-3.1.1
 xml-commons-1.3.04
 /etc/java/resolver/CatalogManager.properties
-EOF
+      EOF
+    }
+    let(:rpm_qa_output_test3) {
+      <<-EOF
+texlive-metalogo-2013.72.0.0.12svn18611
+psmisc-22.20
+texlive-bbcard-2013.72.svn19440
+open-iscsi-2.0.873
+/etc/iscsi/ifaces/iface.example
+/etc/iscsi/iscsid.conf
+/usr/lib/systemd/system/iscsi.service
+/usr/lib/systemd/system/iscsid.service
+apache2-2.4.6
+/etc/apache2/charset.conv
+/etc/apache2/default-server.conf
+/etc/apache2/default-vhost-ssl.conf
+/etc/apache2/default-vhost.conf
+/etc/apache2/errors.conf
+yast2-pkg-bindings-3.1.1
+apache2-2.4.6
+/etc/apache2/listen.conf
+      EOF
     }
     let(:rpm_v_apache_output) {
       <<-EOF
@@ -70,12 +91,12 @@ S.5....T.  c /etc/sysconfig/SuSEfirewall2.d/services/apache2
 missing    c /usr/share/info/dir
 S.5....T.    /etc/sysconfig/ignore_me_cause_im_not_a_config_file
 .........  c /usr/share/man/man1/time.1.gz (replaced)
-EOF
+      EOF
     }
     let(:rpm_v_openiscsi_output) {
       <<-EOF
 SM5..UGT.  c /etc/iscsi/iscsid.conf
-EOF
+      EOF
     }
     let(:ls_fn_output) {
       <<-EOF
@@ -83,7 +104,7 @@ EOF
 -rw-r--r-- 1 0 0 1053 Mar 27  2013 /etc/apache2/listen.conf
 -rw-r--r-- 1 0 0 361 Mar 27  2013 /etc/sysconfig/SuSEfirewall2.d/services/apache2
 -rw-r--r-- 1 0 0 12024 Jun  6  2013 /etc/iscsi/iscsid.conf
-EOF
+      EOF
     }
     let(:stat_output) {
       <<-EOF
@@ -92,15 +113,15 @@ EOF
 644:root:root:0:0:/etc/sysconfig/SuSEfirewall2.d/services/apache2
 4700:nobody:nobody:65534:65533:/etc/iscsi/iscsid.conf
 644:root:root:0:0:/usr/share/man/man1/time.1.gz
-EOF
+      EOF
     }
     let(:config_paths) {
       [
-        "/etc/iscsi/iscsid.conf",
-        "/etc/apache2/default-server.conf",
-        "/etc/apache2/listen.conf",
-        "/etc/sysconfig/SuSEfirewall2.d/services/apache2",
-        "/usr/share/man/man1/time.1.gz"
+          "/etc/iscsi/iscsid.conf",
+          "/etc/apache2/default-server.conf",
+          "/etc/apache2/listen.conf",
+          "/etc/sysconfig/SuSEfirewall2.d/services/apache2",
+          "/usr/share/man/man1/time.1.gz"
       ]
     }
     let(:base_cmdline) {
@@ -109,71 +130,71 @@ EOF
 
     def expect_requirements(system)
       expect(system).to receive(:check_requirement).with(
-        "rpm", "--version"
-      )
+                            "rpm", "--version"
+                        )
       expect(system).to receive(:check_requirement).with(
-        "stat", "--version"
-      )
+                            "stat", "--version"
+                        )
     end
 
-    def expect_rpm_qa(system,output)
+    def expect_rpm_qa(system, output)
       expect(system).to receive(:run_command).with(
-        "rpm", "-qa",
-        "--configfiles", "--queryformat",
-        "%{NAME}-%{VERSION}\n",
-        :stdout => :capture
-      ).and_return(output)
+                            "rpm", "-qa",
+                            "--configfiles", "--queryformat",
+                            "%{NAME}-%{VERSION}\n",
+                            :stdout => :capture
+                        ).and_return(output)
     end
 
-    def expect_data_gather_cmds(system,files,stats_output)
+    def expect_data_gather_cmds(system, files, stats_output)
       expect(system).to receive(:run_command).with(
-        "stat", "--printf", "%a:%U:%G:%u:%g:%n\\n", *files,
-        :stdout => :capture
-      ).and_return(stats_output)
+                            "stat", "--printf", "%a:%U:%G:%u:%g:%n\\n", *files,
+                            :stdout => :capture
+                        ).and_return(stats_output)
     end
 
-    def expect_inspect_configfiles(system,extract)
+    def expect_inspect_configfiles(system, extract)
       expect_requirements(system)
-      if(extract)
+      if (extract)
         expect(system).to receive(:check_requirement).with(
-          "rsync", "--version"
-        )
+                              "rsync", "--version"
+                          )
       end
-      expect_rpm_qa(system,rpm_qa_output_test1)
+      expect_rpm_qa(system, rpm_qa_output_test1)
       rpm_test_data = [
-        ["apache2-2.4.6", rpm_v_apache_output],
-        ["open-iscsi-2.0.873", rpm_v_openiscsi_output]
+          ["apache2-2.4.6", rpm_v_apache_output],
+          ["open-iscsi-2.0.873", rpm_v_openiscsi_output]
       ]
       rpm_test_data.each do |pkg_name, output|
         expect(system).to receive(:run_command).with(
-          *base_cmdline, pkg_name,
-          :stdout => :capture
-        ).and_raise(Cheetah::ExecutionFailed.new(nil, nil, output, nil))
+                              *base_cmdline, pkg_name,
+                              :stdout => :capture
+                          ).and_raise(Cheetah::ExecutionFailed.new(nil, nil, output, nil))
       end
       expect_data_gather_cmds(
-        system,
-        config_paths, stat_output
+          system,
+          config_paths, stat_output
       )
-      if(extract)
+      if (extract)
         cfdir = File.join(store.description_path(name), "config_files")
         expect(system).to receive(:retrieve_files).with(
-          config_paths,
-          cfdir
-        )
+                              config_paths,
+                              cfdir
+                          )
       end
     end
 
     it "returns data about modified config files when requirements are fulfilled" do
       system = double
       md5_os = ConfigFile.new(
-        name:            "",
-        package_name:    "apache2",
-        package_version: "2.4.6",
-        status:          "changed",
-        changes:         ["size", "md5", "time"],
-        user:            "root",
-        group:           "root",
-        mode:            "644"
+          name: "",
+          package_name: "apache2",
+          package_version: "2.4.6",
+          status: "changed",
+          changes: ["size", "md5", "time"],
+          user: "root",
+          group: "root",
+          mode: "644"
       )
 
       apache_1 = md5_os.dup
@@ -188,21 +209,21 @@ EOF
       apache_3.name = "/etc/sysconfig/SuSEfirewall2.d/services/apache2"
 
       apache_4 = ConfigFile.new(
-        name:            "/usr/share/info/dir",
-        package_name:    "apache2",
-        package_version: "2.4.6",
-        status:          "changed",
-        changes:         ["deleted"]
+          name: "/usr/share/info/dir",
+          package_name: "apache2",
+          package_version: "2.4.6",
+          status: "changed",
+          changes: ["deleted"]
       )
       apache_5 = ConfigFile.new(
-        name:            "/usr/share/man/man1/time.1.gz",
-        package_name:    "apache2",
-        package_version: "2.4.6",
-        status:          "changed",
-        changes:         ["replaced"],
-        user:            "root",
-        group:           "root",
-        mode:            "644"
+          name: "/usr/share/man/man1/time.1.gz",
+          package_name: "apache2",
+          package_version: "2.4.6",
+          status: "changed",
+          changes: ["replaced"],
+          user: "root",
+          group: "root",
+          mode: "644"
       )
 
       iscsi_1 = md5_os.dup
@@ -215,8 +236,8 @@ EOF
       iscsi_1.mode = "4700"
 
       expected_data = ConfigFilesScope.new(
-        extracted: false,
-        files: ConfigFileList.new([apache_1, apache_2, iscsi_1, apache_3, apache_4, apache_5])
+          extracted: false,
+          files: ConfigFileList.new([apache_1, apache_2, iscsi_1, apache_3, apache_4, apache_5])
       )
 
       expect_inspect_configfiles(system, false)
@@ -228,99 +249,188 @@ EOF
       expect(inspector.summary).to include("6 changed configuration files")
     end
 
-    it "returns empty when no modified config files are there" do
-      system = double
-      expect_requirements(system)
-      expect_rpm_qa(system,rpm_qa_output_test2)
-      expect(system).to receive(:run_command).with(
-        *base_cmdline, "xml-commons-1.3.04",
-        :stdout => :capture
-      ).and_return("")
+    let(:system) { double }
+    subject { ConfigFilesInspector.new(system, description) }
 
-      inspector = ConfigFilesInspector.new(system, description)
-      inspector.inspect(filter)
+    describe "#packages_with_config_files" do
+      let(:expected_package_list) { ["apache2-2.4.6", "open-iscsi-2.0.873"] }
 
-      expected = ConfigFilesScope.new(
-        extracted: false,
-        files: ConfigFileList.new()
-      )
-      expect(description["config_files"]).to eq(expected)
+      it "returns a list of packages with config files" do
+        expect(system).to receive(:run_command).with("rpm", "-qa", "--configfiles", "--queryformat",
+                                                     "%{NAME}-%{VERSION}\n", {:stdout => :capture}).and_return(rpm_qa_output_test1)
+
+        package_list = subject.packages_with_config_files
+
+        expect(package_list).to match_array expected_package_list
+      end
+
+      it "returns a unique list of packages with config files" do
+        expect(system).to receive(:run_command).with("rpm", "-qa", "--configfiles", "--queryformat",
+                                                     "%{NAME}-%{VERSION}\n", {:stdout => :capture}).and_return(rpm_qa_output_test3)
+
+        package_list = subject.packages_with_config_files
+
+        expect(package_list).to match_array expected_package_list
+      end
     end
 
-    it "raise an error when requirements are not fulfilled" do
-      system = double
-      expect(system).to receive(:check_requirement).with(
-        "rpm", "--version"
-      ).and_raise(Machinery::Errors::MissingRequirement)
+    describe "#config_file_changes" do
+      it "returns a list of changed config files" do
 
-      inspector = ConfigFilesInspector.new(system, description)
-      expect{inspector.inspect(filter)}.to raise_error(
-        Machinery::Errors::MissingRequirement)
+        apache_config_1 = ConfigFile.new(
+            name: "/etc/apache2/default-server.conf",
+            package_name: "apache2",
+            package_version: "2.4.6",
+            status: "changed",
+            changes: ["size", "md5", "time"]
+        )
+
+        apache_config_2 = ConfigFile.new(
+            name: "/etc/apache2/listen.conf",
+            package_name: "apache2",
+            package_version: "2.4.6",
+            status: "changed",
+            changes: ["md5", "time"]
+        )
+
+        apache_config_3 = ConfigFile.new(
+            name: "/etc/sysconfig/SuSEfirewall2.d/services/apache2",
+            package_name: "apache2",
+            package_version: "2.4.6",
+            status: "changed",
+            changes: ["size", "md5", "time"]
+        )
+
+        apache_config_4 = ConfigFile.new(
+            name: "/usr/share/info/dir",
+            package_name: "apache2",
+            package_version: "2.4.6",
+            status: "changed",
+            changes: ["deleted"]
+        )
+        apache_config_5 = ConfigFile.new(
+            name: "/usr/share/man/man1/time.1.gz",
+            package_name: "apache2",
+            package_version: "2.4.6",
+            status: "changed",
+            changes: ["replaced"]
+        )
+
+        expected_data = apache_config_1, apache_config_2, apache_config_3, apache_config_4, apache_config_5
+
+        expect(system).to receive(:run_command).with(
+             "rpm", "-V",
+             "--nodeps", "--nodigest", "--nosignature",
+             "--nomtime", "--nolinkto",
+             "apache2-2.4.6",
+             :stdout => :capture).and_return(rpm_v_apache_output)
+
+        config_file_list = subject.config_file_changes("apache2-2.4.6")
+
+        expect(config_file_list).to eq expected_data
+      end
     end
 
-    it "extracts changed configuration files" do
-      system = double
-      expect_inspect_configfiles(system, true)
+    describe "#inspect" do
 
-      inspector = ConfigFilesInspector.new(system, description)
-      inspector.inspect(filter, extract_changed_config_files: true)
-      expect(inspector.summary).to include("Extracted 6 changed configuration files")
-      cfdir = File.join(store.description_path(name), "config_files")
-      expect(File.stat(cfdir).mode & 0777).to eq(0700)
-    end
+      before(:each) do
+        #packages_with_config_files
+      end
 
-    it "keep permissions on extracted config files dir" do
-      system = double
-      cfdir = File.join(store.description_path(name), "config_files")
-      FileUtils.mkdir_p(cfdir)
-      File.chmod(0750,cfdir)
-      File.chmod(0750, store.description_path(name))
-      expect_inspect_configfiles(system, true)
+      it "returns empty when no modified config files are there" do
+        system = double
+        expect_requirements(system)
+        expect_rpm_qa(system, rpm_qa_output_test2)
+        expect(system).to receive(:run_command).with(
+                              *base_cmdline, "xml-commons-1.3.04",
+                              :stdout => :capture
+                          ).and_return("")
 
-      inspector = ConfigFilesInspector.new(system, description)
-      inspector.inspect(filter, extract_changed_config_files: true)
-      expect(inspector.summary).to include("Extracted 6 changed configuration files")
-      expect(File.stat(cfdir).mode & 0777).to eq(0750)
-    end
+        inspector = ConfigFilesInspector.new(system, description)
+        inspector.inspect(filter)
 
-    it "removes config files on inspect without extraction" do
-      system = double
-      expect_inspect_configfiles(system, false)
+        expected = ConfigFilesScope.new(
+            extracted: false,
+            files: ConfigFileList.new()
+        )
+        expect(description["config_files"]).to eq(expected)
+      end
 
-      cfdir = File.join(store.description_path(name), "config_files")
-      cfdir_file = File.join(cfdir, "config_file")
-      FileUtils.mkdir_p(cfdir)
-      FileUtils.touch(cfdir_file)
+      it "raise an error when requirements are not fulfilled" do
+        system = double
+        expect(system).to receive(:check_requirement).with(
+                              "rpm", "--version"
+                          ).and_raise(Machinery::Errors::MissingRequirement)
 
-      expect(File.exists?(cfdir_file)).to be true
+        inspector = ConfigFilesInspector.new(system, description)
+        expect { inspector.inspect(filter) }.to raise_error(
+                                                    Machinery::Errors::MissingRequirement)
+      end
 
-      inspector = ConfigFilesInspector.new(system, description)
-      inspector.inspect(filter)
+      it "extracts changed configuration files" do
+        system = double
+        expect_inspect_configfiles(system, true)
 
-      expect(File.exists?(cfdir_file)).to be false
-    end
+        inspector = ConfigFilesInspector.new(system, description)
+        inspector.inspect(filter, extract_changed_config_files: true)
+        expect(inspector.summary).to include("Extracted 6 changed configuration files")
+        cfdir = File.join(store.description_path(name), "config_files")
+        expect(File.stat(cfdir).mode & 0777).to eq(0700)
+      end
 
-    it "returns schema compliant data" do
-      system = double
-      expect_inspect_configfiles(system, true)
+      it "keep permissions on extracted config files dir" do
+        system = double
+        cfdir = File.join(store.description_path(name), "config_files")
+        FileUtils.mkdir_p(cfdir)
+        File.chmod(0750, cfdir)
+        File.chmod(0750, store.description_path(name))
+        expect_inspect_configfiles(system, true)
 
-      inspector = ConfigFilesInspector.new(system, description)
-      inspector.inspect(filter, extract_changed_config_files: true )
+        inspector = ConfigFilesInspector.new(system, description)
+        inspector.inspect(filter, extract_changed_config_files: true)
+        expect(inspector.summary).to include("Extracted 6 changed configuration files")
+        expect(File.stat(cfdir).mode & 0777).to eq(0750)
+      end
 
-      expect {
-        JsonValidator.new(description.to_hash).validate
-      }.to_not raise_error
-    end
+      it "removes config files on inspect without extraction" do
+        system = double
+        expect_inspect_configfiles(system, false)
 
-    it "returns sorted data" do
-      system = double
-      expect_inspect_configfiles(system, true)
+        cfdir = File.join(store.description_path(name), "config_files")
+        cfdir_file = File.join(cfdir, "config_file")
+        FileUtils.mkdir_p(cfdir)
+        FileUtils.touch(cfdir_file)
 
-      inspector = ConfigFilesInspector.new(system, description)
-      inspector.inspect(filter, :extract_changed_config_files => true)
-      names = description["config_files"].files.map(&:name)
+        expect(File.exists?(cfdir_file)).to be true
 
-      expect(names).to eq(names.sort)
+        inspector = ConfigFilesInspector.new(system, description)
+        inspector.inspect(filter)
+
+        expect(File.exists?(cfdir_file)).to be false
+      end
+
+      it "returns schema compliant data" do
+        system = double
+        expect_inspect_configfiles(system, true)
+
+        inspector = ConfigFilesInspector.new(system, description)
+        inspector.inspect(filter, extract_changed_config_files: true)
+
+        expect {
+          JsonValidator.new(description.to_hash).validate
+        }.to_not raise_error
+      end
+
+      it "returns sorted data" do
+        system = double
+        expect_inspect_configfiles(system, true)
+
+        inspector = ConfigFilesInspector.new(system, description)
+        inspector.inspect(filter, :extract_changed_config_files => true)
+        names = description["config_files"].files.map(&:name)
+
+        expect(names).to eq(names.sort)
+      end
     end
   end
 end
