@@ -249,9 +249,12 @@ class UnmanagedFilesInspector < Inspector
     file_filter ||= ElementFilter.new("/unmanaged_files/files/name")
     file_filter.add_matchers("=", @description.store.base_path)
 
-    # Add a recursive pendant to each ignored element
     file_filter.matchers.each do |operator, matchers|
+      # Add a recursive pendant to each ignored element
       file_filter.add_matchers(operator, matchers.map { |entry| File.join(entry, "/*") })
+
+      # Add regular unmanaged file filters to exclude list
+      excluded_files += matchers if operator == "="
     end
 
     remote_dirs.delete_if { |e| file_filter.matches?(e) }
@@ -313,7 +316,9 @@ class UnmanagedFilesInspector < Inspector
         next if special_dirs.include?(find_dir + dir)
 
         # save into list of unmanaged trees
-        if !remote_dirs.include?(find_dir + dir)
+        if !excluded_files.any? do |path|
+          (File.join(find_dir + dir, "/")).start_with?(File.join(path, "/"))
+        end
           unmanaged_trees << find_dir + dir
         end
         dir = File.join(dir, "/")
