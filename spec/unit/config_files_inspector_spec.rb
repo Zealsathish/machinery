@@ -21,6 +21,7 @@ describe ConfigFilesInspector do
   describe ".inspect" do
     include FakeFS::SpecHelpers
 
+    let(:system) { double }
     let(:name) { "systemname" }
     let(:store) { SystemDescriptionStore.new }
     let(:description) {
@@ -32,6 +33,7 @@ describe ConfigFilesInspector do
       create_test_description(json: "{}", name: name, store: store).save
       FakeFS::FileSystem.clone("schema/")
     end
+
 
     let(:rpm_qa_output_test1) {
       <<-EOF
@@ -117,16 +119,17 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
     }
     let(:config_paths) {
       [
-          "/etc/iscsi/iscsid.conf",
           "/etc/apache2/default-server.conf",
           "/etc/apache2/listen.conf",
           "/etc/sysconfig/SuSEfirewall2.d/services/apache2",
-          "/usr/share/man/man1/time.1.gz"
+          "/usr/share/man/man1/time.1.gz",
+          "/etc/iscsi/iscsid.conf"
       ]
     }
     let(:base_cmdline) {
       ["rpm", "-V", "--nodeps", "--nodigest", "--nosignature", "--nomtime", "--nolinkto"]
     }
+
 
     def expect_requirements(system)
       expect(system).to receive(:check_requirement).with(
@@ -138,12 +141,12 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
     end
 
     def expect_rpm_qa(system, output)
-      expect(system).to receive(:run_command).with(
-                            "rpm", "-qa",
-                            "--configfiles", "--queryformat",
-                            "%{NAME}-%{VERSION}\n",
-                            :stdout => :capture
-                        ).and_return(output)
+      allow(system).to receive(:run_command).with(
+                           "rpm", "-qa",
+                           "--configfiles", "--queryformat",
+                           "%{NAME}-%{VERSION}\n",
+                           :stdout => :capture
+                       ).and_return(output)
     end
 
     def expect_data_gather_cmds(system, files, stats_output)
@@ -184,76 +187,11 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
       end
     end
 
-    it "returns data about modified config files when requirements are fulfilled" do
-      system = double
-      md5_os = ConfigFile.new(
-          name: "",
-          package_name: "apache2",
-          package_version: "2.4.6",
-          status: "changed",
-          changes: ["size", "md5", "time"],
-          user: "root",
-          group: "root",
-          mode: "644"
-      )
 
-      apache_1 = md5_os.dup
-      apache_1.name = "/etc/apache2/default-server.conf"
-
-      apache_2 = md5_os.dup
-      apache_2.name = "/etc/apache2/listen.conf"
-      apache_2.changes = ["md5", "time"]
-      apache_2.mode = "6644"
-
-      apache_3 = md5_os.dup
-      apache_3.name = "/etc/sysconfig/SuSEfirewall2.d/services/apache2"
-
-      apache_4 = ConfigFile.new(
-          name: "/usr/share/info/dir",
-          package_name: "apache2",
-          package_version: "2.4.6",
-          status: "changed",
-          changes: ["deleted"]
-      )
-      apache_5 = ConfigFile.new(
-          name: "/usr/share/man/man1/time.1.gz",
-          package_name: "apache2",
-          package_version: "2.4.6",
-          status: "changed",
-          changes: ["replaced"],
-          user: "root",
-          group: "root",
-          mode: "644"
-      )
-
-      iscsi_1 = md5_os.dup
-      iscsi_1.changes = ["size", "mode", "md5", "user", "group", "time"]
-      iscsi_1.name = "/etc/iscsi/iscsid.conf"
-      iscsi_1.package_name = "open-iscsi"
-      iscsi_1.package_version = "2.0.873"
-      iscsi_1.user = "nobody"
-      iscsi_1.group = "nobody"
-      iscsi_1.mode = "4700"
-
-      expected_data = ConfigFilesScope.new(
-          extracted: false,
-          files: ConfigFileList.new([apache_1, apache_2, iscsi_1, apache_3, apache_4, apache_5])
-      )
-
-      expect_inspect_configfiles(system, false)
-
-      inspector = ConfigFilesInspector.new(system, description)
-      inspector.inspect(filter)
-
-      expect(description["config_files"]).to eq(expected_data)
-      expect(inspector.summary).to include("6 changed configuration files")
-    end
-
-    let(:system) { double }
+    let(:expected_package_list) { ["apache2-2.4.6", "open-iscsi-2.0.873"] }
     subject { ConfigFilesInspector.new(system, description) }
 
     describe "#packages_with_config_files" do
-      let(:expected_package_list) { ["apache2-2.4.6", "open-iscsi-2.0.873"] }
 
       it "returns a list of packages with config files" do
         expect(system).to receive(:run_command).with("rpm", "-qa", "--configfiles", "--queryformat",
@@ -316,25 +254,99 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
             changes: ["replaced"]
         )
 
-        expected_data = apache_config_1, apache_config_2, apache_config_3, apache_config_4, apache_config_5
+        expected_apache_config_file_data = apache_config_1, apache_config_2, apache_config_3, apache_config_4, apache_config_5
 
         expect(system).to receive(:run_command).with(
-             "rpm", "-V",
-             "--nodeps", "--nodigest", "--nosignature",
-             "--nomtime", "--nolinkto",
-             "apache2-2.4.6",
-             :stdout => :capture).and_return(rpm_v_apache_output)
+                              "rpm", "-V",
+                              "--nodeps", "--nodigest", "--nosignature",
+                              "--nomtime", "--nolinkto",
+                              "apache2-2.4.6",
+                              :stdout => :capture).and_return(rpm_v_apache_output)
 
         config_file_list = subject.config_file_changes("apache2-2.4.6")
 
-        expect(config_file_list).to eq expected_data
+        expect(config_file_list).to eq expected_apache_config_file_data
       end
     end
 
     describe "#inspect" do
 
       before(:each) do
-        #packages_with_config_files
+
+        apache_config_1 = ConfigFile.new(
+            name: "/etc/apache2/default-server.conf",
+            package_name: "apache2",
+            package_version: "2.4.6",
+            status: "changed",
+            changes: ["size", "md5", "time"]
+        )
+
+        apache_config_2 = ConfigFile.new(
+            name: "/etc/apache2/listen.conf",
+            package_name: "apache2",
+            package_version: "2.4.6",
+            status: "changed",
+            changes: ["md5", "time"]
+        )
+
+        apache_config_3 = ConfigFile.new(
+            name: "/etc/sysconfig/SuSEfirewall2.d/services/apache2",
+            package_name: "apache2",
+            package_version: "2.4.6",
+            status: "changed",
+            changes: ["size", "md5", "time"]
+        )
+
+        apache_config_4 = ConfigFile.new(
+            name: "/usr/share/info/dir",
+            package_name: "apache2",
+            package_version: "2.4.6",
+            status: "changed",
+            changes: ["deleted"]
+        )
+        apache_config_5 = ConfigFile.new(
+            name: "/usr/share/man/man1/time.1.gz",
+            package_name: "apache2",
+            package_version: "2.4.6",
+            status: "changed",
+            changes: ["replaced"]
+        )
+
+        iscsi_config_1 = ConfigFile.new(
+            name: "/etc/iscsi/iscsid.conf",
+            package_name: "open-iscsi",
+            package_version: "2.0.873",
+            changes: ["size", "mode", "md5", "user", "group", "time"],
+            user: "nobody",
+            group: "nobody",
+            mode: "4700"
+        )
+
+        expected_apache_config_file_data = apache_config_1, apache_config_2, apache_config_3, apache_config_4, apache_config_5
+        @expected_data = ConfigFilesScope.new(
+            extracted: false,
+            files: ConfigFileList.new([apache_config_1, apache_config_2, iscsi_config_1, apache_config_3, apache_config_4, apache_config_5])
+        )
+
+        allow_any_instance_of(ConfigFilesInspector).to receive(:packages_with_config_files).and_return(["apache2-2.4.6", "open-iscsi-2.0.873"])
+        allow_any_instance_of(ConfigFilesInspector).to receive(:config_file_changes).with("apache2-2.4.6").and_return(expected_apache_config_file_data)
+        allow_any_instance_of(ConfigFilesInspector).to receive(:config_file_changes).with("open-iscsi-2.0.873").and_return(iscsi_config_1)
+        allow_any_instance_of(ConfigFilesInspector).to receive(:check_requirements)
+
+
+      end
+
+      it "returns data about modified config files when requirements are fulfilled" do
+        expect_data_gather_cmds(
+            system,
+            config_paths, stat_output
+        )
+
+        inspector = ConfigFilesInspector.new(system, description)
+        inspector.inspect(filter)
+
+        expect(description["config_files"]).to eq(@expected_data)
+        expect(inspector.summary).to include("6 changed configuration files")
       end
 
       it "returns empty when no modified config files are there" do
@@ -345,10 +357,8 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
                               *base_cmdline, "xml-commons-1.3.04",
                               :stdout => :capture
                           ).and_return("")
-
         inspector = ConfigFilesInspector.new(system, description)
         inspector.inspect(filter)
-
         expected = ConfigFilesScope.new(
             extracted: false,
             files: ConfigFileList.new()
@@ -367,10 +377,22 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
                                                     Machinery::Errors::MissingRequirement)
       end
 
+      it "extracts changed configuration files - new" do
+        expect_data_gather_cmds(
+            system,
+            config_paths, stat_output
+        )
+        inspector = ConfigFilesInspector.new(system, description)
+        inspector.inspect(filter, extract_changed_config_files: true)
+
+        expect(inspector.summary).to include("Extracted 6 changed configuration files")
+        cfdir = File.join(store.description_path(name), "config_files")
+        expect(File.stat(cfdir).mode & 0777).to eq(0700)
+      end
+
       it "extracts changed configuration files" do
         system = double
         expect_inspect_configfiles(system, true)
-
         inspector = ConfigFilesInspector.new(system, description)
         inspector.inspect(filter, extract_changed_config_files: true)
         expect(inspector.summary).to include("Extracted 6 changed configuration files")
