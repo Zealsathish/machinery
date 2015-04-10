@@ -132,10 +132,10 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
 
 
     def expect_requirements(system)
-      expect(system).to receive(:check_requirement).with(
+      allow(system).to receive(:check_requirement).with(
                             "rpm", "--version"
                         )
-      expect(system).to receive(:check_requirement).with(
+      allow(system).to receive(:check_requirement).with(
                             "stat", "--version"
                         )
     end
@@ -191,8 +191,27 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
     let(:expected_package_list) { ["apache2-2.4.6", "open-iscsi-2.0.873"] }
     subject { ConfigFilesInspector.new(system, description) }
 
-    describe "#packages_with_config_files" do
+    describe "check requirements" do
+      it "returns true if requirements are fulfilled" do
+        expect(system).to receive(:check_requirement).with("rpm", "--version")
+        expect(system).to receive(:check_requirement).with("stat", "--version")
 
+        requirements_fulfilled = subject.check_requirements(false)
+        expect(requirements_fulfilled).equal?(true)
+      end
+
+      it "returns true if requirements are fulfilled for extraction" do
+        expect(system).to receive(:check_requirement).with("rpm", "--version")
+        expect(system).to receive(:check_requirement).with("stat", "--version")
+        expect(system).to receive(:check_requirement).with("rsync", "--version")
+
+        requirements_fulfilled = subject.check_requirements(true)
+        expect(requirements_fulfilled).equal?(true)
+      end
+    end
+
+
+    describe "#packages_with_config_files" do
       it "returns a list of packages with config files" do
         expect(system).to receive(:run_command).with("rpm", "-qa", "--configfiles", "--queryformat",
                                                      "%{NAME}-%{VERSION}\n", {:stdout => :capture}).and_return(rpm_qa_output_test1)
@@ -210,7 +229,18 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
 
         expect(package_list).to match_array expected_package_list
       end
+
+      it "returns a empty list when no packages contain config files" do
+
+        expect(system).to receive(:run_command).with("rpm", "-qa", "--configfiles", "--queryformat",
+                                                     "%{NAME}-%{VERSION}\n", {:stdout => :capture}).and_return("")
+
+        package_list = subject.packages_with_config_files
+
+        expect(package_list).to match_array []
+      end
     end
+
 
     describe "#config_file_changes" do
       it "returns a list of changed config files" do
@@ -269,8 +299,8 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
       end
     end
 
-    describe "#inspect" do
 
+    describe "#inspect" do
       before(:each) do
 
         apache_config_1 = ConfigFile.new(
@@ -329,6 +359,7 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
         )
 
         allow_any_instance_of(ConfigFilesInspector).to receive(:packages_with_config_files).and_return(["apache2-2.4.6", "open-iscsi-2.0.873"])
+
         allow_any_instance_of(ConfigFilesInspector).to receive(:config_file_changes).with("apache2-2.4.6").and_return(expected_apache_config_file_data)
         allow_any_instance_of(ConfigFilesInspector).to receive(:config_file_changes).with("open-iscsi-2.0.873").and_return(iscsi_config_1)
         allow_any_instance_of(ConfigFilesInspector).to receive(:check_requirements)
@@ -350,13 +381,8 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
       end
 
       it "returns empty when no modified config files are there" do
-        system = double
-        expect_requirements(system)
-        expect_rpm_qa(system, rpm_qa_output_test2)
-        expect(system).to receive(:run_command).with(
-                              *base_cmdline, "xml-commons-1.3.04",
-                              :stdout => :capture
-                          ).and_return("")
+        allow_any_instance_of(ConfigFilesInspector).to receive(:packages_with_config_files).and_return([])
+
         inspector = ConfigFilesInspector.new(system, description)
         inspector.inspect(filter)
         expected = ConfigFilesScope.new(
@@ -365,6 +391,18 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
         )
         expect(description["config_files"]).to eq(expected)
       end
+
+
+      it "raise an error when requirements are not fulfilled - new" do
+        expect(system).to receive(:check_requirement).with(
+                              "rpm", "--version"
+                          ).and_raise(Machinery::Errors::MissingRequirement)
+
+        inspector = ConfigFilesInspector.new(system, description)
+        expect { inspector.inspect(filter) }.to raise_error(
+                                                    Machinery::Errors::MissingRequirement)
+      end
+
 
       it "raise an error when requirements are not fulfilled" do
         system = double
@@ -376,6 +414,7 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
         expect { inspector.inspect(filter) }.to raise_error(
                                                     Machinery::Errors::MissingRequirement)
       end
+
 
       it "extracts changed configuration files - new" do
         expect_data_gather_cmds(
