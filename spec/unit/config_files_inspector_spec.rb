@@ -393,22 +393,8 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
       end
 
 
-      it "raise an error when requirements are not fulfilled - new" do
-        expect(system).to receive(:check_requirement).with(
-                              "rpm", "--version"
-                          ).and_raise(Machinery::Errors::MissingRequirement)
-
-        inspector = ConfigFilesInspector.new(system, description)
-        expect { inspector.inspect(filter) }.to raise_error(
-                                                    Machinery::Errors::MissingRequirement)
-      end
-
-
       it "raise an error when requirements are not fulfilled" do
-        system = double
-        expect(system).to receive(:check_requirement).with(
-                              "rpm", "--version"
-                          ).and_raise(Machinery::Errors::MissingRequirement)
+        allow_any_instance_of(ConfigFilesInspector).to receive(:check_requirements).and_raise(Machinery::Errors::MissingRequirement)
 
         inspector = ConfigFilesInspector.new(system, description)
         expect { inspector.inspect(filter) }.to raise_error(
@@ -416,7 +402,12 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
       end
 
 
-      it "extracts changed configuration files - new" do
+      it "extracts changed configuration files" do
+        cfdir = File.join(store.description_path(name), "config_files")
+        expect(system).to receive(:retrieve_files).with(
+                              config_paths,
+                              cfdir
+                          )
         expect_data_gather_cmds(
             system,
             config_paths, stat_output
@@ -429,23 +420,20 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
         expect(File.stat(cfdir).mode & 0777).to eq(0700)
       end
 
-      it "extracts changed configuration files" do
-        system = double
-        expect_inspect_configfiles(system, true)
-        inspector = ConfigFilesInspector.new(system, description)
-        inspector.inspect(filter, extract_changed_config_files: true)
-        expect(inspector.summary).to include("Extracted 6 changed configuration files")
-        cfdir = File.join(store.description_path(name), "config_files")
-        expect(File.stat(cfdir).mode & 0777).to eq(0700)
-      end
 
       it "keep permissions on extracted config files dir" do
-        system = double
         cfdir = File.join(store.description_path(name), "config_files")
+        expect_data_gather_cmds(
+            system,
+            config_paths, stat_output
+        )
+        expect(system).to receive(:retrieve_files).with(
+                              config_paths,
+                              cfdir
+                          )
         FileUtils.mkdir_p(cfdir)
         File.chmod(0750, cfdir)
         File.chmod(0750, store.description_path(name))
-        expect_inspect_configfiles(system, true)
 
         inspector = ConfigFilesInspector.new(system, description)
         inspector.inspect(filter, extract_changed_config_files: true)
@@ -454,8 +442,10 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
       end
 
       it "removes config files on inspect without extraction" do
-        system = double
-        expect_inspect_configfiles(system, false)
+        expect_data_gather_cmds(
+            system,
+            config_paths, stat_output
+        )
 
         cfdir = File.join(store.description_path(name), "config_files")
         cfdir_file = File.join(cfdir, "config_file")
@@ -470,9 +460,17 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
         expect(File.exists?(cfdir_file)).to be false
       end
 
+
       it "returns schema compliant data" do
-        system = double
-        expect_inspect_configfiles(system, true)
+        expect_data_gather_cmds(
+            system,
+            config_paths, stat_output
+        )
+        cfdir = File.join(store.description_path(name), "config_files")
+        expect(system).to receive(:retrieve_files).with(
+                              config_paths,
+                              cfdir
+                          )
 
         inspector = ConfigFilesInspector.new(system, description)
         inspector.inspect(filter, extract_changed_config_files: true)
@@ -483,8 +481,15 @@ SM5..UGT.  c /etc/iscsi/iscsid.conf
       end
 
       it "returns sorted data" do
-        system = double
-        expect_inspect_configfiles(system, true)
+        expect_data_gather_cmds(
+            system,
+            config_paths, stat_output
+        )
+        cfdir = File.join(store.description_path(name), "config_files")
+        expect(system).to receive(:retrieve_files).with(
+                              config_paths,
+                              cfdir
+                          )
 
         inspector = ConfigFilesInspector.new(system, description)
         inspector.inspect(filter, :extract_changed_config_files => true)
