@@ -84,6 +84,10 @@ class FileValidator
     end
 
     store_base_path = ScopeFileStore.new(@base_path, scope.to_s).path
+    puts "path: #{@base_path}"
+    puts "scope #{scope.to_s}"
+    puts "new: #{ScopeFileStore.new(@base_path, scope.to_s)}"
+    puts "new: #{ScopeFileStore.new(@base_path, scope.to_s).path}"
     expected_files.map { |file| File.join(store_base_path, file) }
   end
 

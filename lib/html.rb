@@ -27,6 +27,7 @@ class Html
       # Enrich description with the config file diffs
       description.config_files.files.each do |file|
         path = File.join(diffs_dir, file.name + ".diff")
+        puts "diff file: #{path}"
         file.diff = diff_to_object(File.read(path)) if File.exists?(path)
       end
     end
@@ -73,6 +74,7 @@ class Html
   end
 
   def self.diff_to_object(diff)
+    diff.encode!('UTF-8', invalid: :replace, undef: :replace)
     lines = diff.lines[2..-1]
     diff_object = {
       file: diff[/--- a(.*)/, 1],
